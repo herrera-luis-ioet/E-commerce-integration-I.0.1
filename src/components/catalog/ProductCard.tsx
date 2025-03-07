@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../../types/product';
+import useLazyLoad from '../../hooks/useLazyLoad';
 
 // PUBLIC_INTERFACE
 /**
@@ -82,14 +83,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
         className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
         onClick={handleClick}
       >
-        {/* Product image */}
+        {/* Product image with lazy loading */}
         <div className="relative h-48 overflow-hidden">
           <Link to={`/product/${id}`}>
-            <img 
-              src={thumbnail} 
-              alt={name} 
-              className="w-full h-full object-cover transition-transform hover:scale-105"
-            />
+            {(() => {
+              const imgRef = useRef<HTMLImageElement>(null);
+              const { currentSrc, isLoaded } = useLazyLoad(imgRef, thumbnail);
+              return (
+                <img 
+                  ref={imgRef}
+                  src={currentSrc}
+                  alt={name} 
+                  className={`w-full h-full object-cover transition-transform hover:scale-105 ${
+                    isLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  style={{ transition: 'opacity 0.3s ease-in-out' }}
+                  onLoad={() => imgRef.current?.classList.add('opacity-100')}
+                />
+              );
+            })()}
           </Link>
           
           {/* Discount badge */}
@@ -156,15 +168,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
       className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex"
       onClick={handleClick}
     >
-      {/* Product image */}
+      {/* Product image with lazy loading */}
       <div className="relative w-32 sm:w-48 flex-shrink-0">
         <Link to={`/product/${id}`}>
-          <img 
-            src={thumbnail} 
-            alt={name} 
-            className="w-full h-full object-cover"
-            style={{ height: '100%' }}
-          />
+          {(() => {
+            const imgRef = useRef<HTMLImageElement>(null);
+            const { currentSrc, isLoaded } = useLazyLoad(imgRef, thumbnail);
+            return (
+              <img 
+                ref={imgRef}
+                src={currentSrc}
+                alt={name} 
+                className={`w-full h-full object-cover ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{ height: '100%', transition: 'opacity 0.3s ease-in-out' }}
+                onLoad={() => imgRef.current?.classList.add('opacity-100')}
+              />
+            );
+          })()}
         </Link>
         
         {/* Discount badge */}

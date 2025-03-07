@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product, ProductResponse } from '../../types/product';
 import ProductCard from './ProductCard';
 import Loading from '../common/Loading';
 import Error from '../common/Error';
 import Pagination from '../common/Pagination';
+import useInfiniteScroll from '../../hooks/useInfiniteScroll';
 
 // PUBLIC_INTERFACE
 /**
@@ -15,6 +16,9 @@ import Pagination from '../common/Pagination';
  * @param pagination - Pagination information
  * @param onPageChange - Function to call when page is changed
  * @param onRetry - Function to call when retry button is clicked
+ * @param infiniteScroll - Whether to use infinite scrolling instead of pagination
+ * @param loadMore - Function to call when more products need to be loaded (for infinite scroll)
+ * @param hasMore - Whether there are more products to load (for infinite scroll)
  */
 interface ProductGridProps {
   products: Product[];
@@ -24,6 +28,9 @@ interface ProductGridProps {
   pagination?: ProductResponse['pagination'];
   onPageChange?: (page: number) => void;
   onRetry?: () => void;
+  infiniteScroll?: boolean;
+  loadMore?: () => Promise<void>;
+  hasMore?: boolean;
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({
@@ -33,8 +40,15 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   onProductClick,
   pagination,
   onPageChange,
-  onRetry
+  onRetry,
+  infiniteScroll = false,
+  loadMore,
+  hasMore = false
 }) => {
+  // Use infinite scroll hook if enabled
+  const { sentinelRef, loading: loadingMore } = infiniteScroll && loadMore
+    ? useInfiniteScroll(loadMore)
+    : { sentinelRef: null, loading: false };
   // Show loading state
   if (loading) {
     return (
@@ -99,8 +113,18 @@ const ProductGrid: React.FC<ProductGridProps> = ({
         ))}
       </div>
 
-      {/* Pagination */}
-      {pagination && onPageChange && (
+      {/* Infinite scroll sentinel */}
+      {infiniteScroll && loadMore && hasMore && (
+        <div 
+          ref={sentinelRef as React.RefObject<HTMLDivElement>} 
+          className="w-full py-8 flex justify-center"
+        >
+          {loadingMore && <Loading size="small" text="Loading more products..." />}
+        </div>
+      )}
+
+      {/* Pagination (only shown if infinite scroll is disabled) */}
+      {!infiniteScroll && pagination && onPageChange && (
         <Pagination
           currentPage={pagination.currentPage}
           totalPages={pagination.totalPages}
